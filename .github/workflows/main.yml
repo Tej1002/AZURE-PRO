@@ -1,78 +1,76 @@
 name: Deploy AKS and Install ArgoCD
 
 on:
-workflow_dispatch:
+  workflow_dispatch:
 
 jobs:
-deploy:
-runs-on: ubuntu-latest
+  deploy:
+    runs-on: ubuntu-latest
 
+    env:
+      TF_VAR_ssh_public_key: ${{ secrets.TF_VAR_SSH_PUBLIC_KEY }}
 
-env:
-  TF_VAR_ssh_public_key: ${{ secrets.TF_VAR_SSH_PUBLIC_KEY }}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
-steps:
-  - name: Checkout Repository
-    uses: actions/checkout@v4
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
 
-  - name: Setup Terraform
-    uses: hashicorp/setup-terraform@v3
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: |
+            {
+              "clientId":"${{ secrets.TF_VAR_CLIENT_ID }}",
+              "clientSecret":"${{ secrets.TF_VAR_CLIENT_SECRET }}",
+              "subscriptionId":"${{ secrets.TF_VAR_SUBSCRIPTION_ID }}",
+              "tenantId":"${{ secrets.TF_VAR_TENANT_ID }}"
+            }
 
-  - name: Azure Login
-    uses: azure/login@v2
-    with:
-      creds: |
-        {
-          "clientId":"${{ secrets.TF_VAR_CLIENT_ID }}",
-          "clientSecret":"${{ secrets.TF_VAR_CLIENT_SECRET }}",
-          "subscriptionId":"${{ secrets.TF_VAR_SUBSCRIPTION_ID }}",
-          "tenantId":"${{ secrets.TF_VAR_TENANT_ID }}"
-        }
+      - name: Terraform Init
+        run: terraform init
 
-  - name: Terraform Init
-    run: terraform init
+      - name: Terraform Validate
+        run: terraform validate
 
-  - name: Terraform Validate
-    run: terraform validate
+      - name: Terraform Plan
+        run: terraform plan
 
-  - name: Terraform Plan
-    run: terraform plan
+      - name: Terraform Apply
+        run: terraform apply -auto-approve
 
-  - name: Terraform Apply
-    run: terraform apply -auto-approve
+      - name: Install kubectl
+        uses: azure/setup-kubectl@v4
 
-  - name: Install kubectl
-    uses: azure/setup-kubectl@v4
+      - name: Install Helm
+        uses: azure/setup-helm@v4
 
-  - name: Install Helm
-    uses: azure/setup-helm@v4
+      - name: Get AKS Credentials
+        run: |
+          az aks get-credentials \
+            --resource-group rg-aks-demo \
+            --name aks-cluster \
+            --overwrite-existing
 
-  - name: Get AKS Credentials
-    run: |
-      az aks get-credentials \
-        --resource-group rg-aks-demo \
-        --name aks-cluster \
-        --overwrite-existing
+      - name: Verify Cluster
+        run: kubectl get nodes
 
-  - name: Verify Cluster
-    run: kubectl get nodes
+      - name: Add ArgoCD Helm Repository
+        run: |
+          helm repo add argo https://argoproj.github.io/argo-helm
+          helm repo update
 
-  - name: Add ArgoCD Helm Repository
-    run: |
-      helm repo add argo https://argoproj.github.io/argo-helm
-      helm repo update
+      - name: Create ArgoCD Namespace
+        run: |
+          kubectl create namespace argocd --dry-run=client -o yaml | kubectl apply -f -
 
-  - name: Create ArgoCD Namespace
-    run: |
-      kubectl create namespace argocd --dry-run=client -o yaml | kubectl apply -f -
+      - name: Install ArgoCD
+        run: |
+          helm upgrade --install argocd argo/argo-cd \
+            --namespace argocd
 
-  - name: Install ArgoCD
-    run: |
-      helm upgrade --install argocd argo/argo-cd \
-        --namespace argocd
-
-  - name: Verify ArgoCD Installation
-    run: |
-      kubectl get pods -n argocd
-      kubectl get svc -n argocd
-
+      - name: Verify ArgoCD Installation
+        run: |
+          kubectl get pods -n argocd
+          kubectl get svc -n argocd
