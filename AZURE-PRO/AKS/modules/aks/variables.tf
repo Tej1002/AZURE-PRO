@@ -33,7 +33,7 @@ variable "node_count" {
 variable "node_vm_size" {
   description = "VM size for nodes"
   type        = string
-  default     = "Standard_D2ls_v5"
+  default     = "Standard_DS2_v2"
 }
 
 variable "aks_subnet_id" {
