@@ -7,7 +7,7 @@ jobs:
 deploy:
 runs-on: ubuntu-latest
 
-```
+
 env:
   TF_VAR_ssh_public_key: ${{ secrets.TF_VAR_SSH_PUBLIC_KEY }}
   TF_VAR_client_id: ${{ secrets.TF_VAR_CLIENT_ID }}
@@ -105,4 +105,4 @@ steps:
   - name: Get ArgoCD Service
     run: |
       kubectl get svc argocd-server -n argocd
-```
+
