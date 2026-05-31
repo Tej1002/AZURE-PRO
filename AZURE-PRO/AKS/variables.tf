@@ -72,7 +72,7 @@ variable "node_count" {
 
 variable "node_vm_size" {
   type    = string
-  default = "standard_b16pls_v2"
+  default = "standard_b2ps_v2"
 }
 
 variable "os_disk_size_gb" {
