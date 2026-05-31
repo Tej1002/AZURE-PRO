@@ -30,10 +30,7 @@ resource "azurerm_kubernetes_cluster" "this" {
     log_analytics_workspace_id = var.log_analytics_workspace_id
   }
 
-  azure_active_directory_role_based_access_control {
-    tenant_id              = data.azurerm_client_config.current.tenant_id
-    admin_group_object_ids = []
-  }
+  
 
   linux_profile {
     admin_username = var.linux_admin_username
