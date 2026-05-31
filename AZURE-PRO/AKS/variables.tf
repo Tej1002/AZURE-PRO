@@ -117,5 +117,5 @@ variable "linux_admin_username" {
 
 variable "ssh_public_key" {
   type    = string
-  default = "demoaks.pem"
+
 }
