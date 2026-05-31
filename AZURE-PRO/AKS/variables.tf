@@ -67,7 +67,7 @@ variable "node_pool_name" {
 
 variable "node_count" {
   type    = number
-  default = 3
+  default = 2
 }
 
 variable "node_vm_size" {
